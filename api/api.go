@@ -4,18 +4,18 @@ package api
 
 import (
 	"context"
-	"net/http"
-	"os"
-	"time"
-
 	"github.com/aca/go-restapi-boilerplate/ent"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/open-policy-agent/opa/rego"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"net/http"
+	"os"
+	"time"
 )
 
 type server struct {
@@ -23,6 +23,7 @@ type server struct {
 	httpClient *http.Client
 	v          *viper.Viper
 	root       http.Handler
+	opa        *OPA
 }
 
 func NewServer(ctx context.Context, v *viper.Viper) (*server, error) {
@@ -34,6 +35,15 @@ func NewServer(ctx context.Context, v *viper.Viper) (*server, error) {
 
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	log.Logger = log.Logger.With().Timestamp().Caller().Logger()
+
+	// opa
+	rg := rego.New(
+		rego.Query(v.GetString(ConfigOpaQuery)),
+		rego.Load([]string{v.GetString(ConfigOpaFilePath)}, nil))
+
+	s.opa = &OPA{
+		module: rg,
+	}
 
 	// global logger
 	if v.GetString(ConfigLogFormat) == "json" {
@@ -80,11 +90,13 @@ func NewServer(ctx context.Context, v *viper.Viper) (*server, error) {
 	// r.Use(hlog.CustomHeaderHandler("reqId", "X-Request-Id"))
 	r.Use(hlog.RequestIDHandler("req_id", "Request-Id"))
 
-
 	r.Use(mwMetrics)
 
+	// authorization middleware
+	r.Use(s.opaMW())
+
 	// There's open pr for https://github.com/deepmap/oapi-codegen/pull/124
-	// If it gets merged, We might can make much flexible router 
+	// If it gets merged, We might can make much flexible router
 	r.Handle("/metrics", promhttp.Handler())
 	s.root = HandlerFromMux(s, r)
 

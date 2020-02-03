@@ -21,6 +21,11 @@ const (
 	// certificate
 	ConfigTLSCert = "tls.crt"
 	ConfigTLSKey  = "tls.key"
+
+	// OPA
+	ConfigOpaFilePath    = "opa.file.path"
+	ConfigOpaQuery       = "opa.query"
+	ConfigOpaDecisionKey = "opa.decision.key"
 )
 
 func buildFlags() *pflag.FlagSet {
@@ -33,6 +38,10 @@ func buildFlags() *pflag.FlagSet {
 
 	flags.String(ConfigTLSCert, "", "tls certificate for api token")
 	flags.String(ConfigTLSKey, "", "tls key for api token")
+
+	flags.String(ConfigOpaFilePath, "/app/api/policy/authz.rego", "OPA rego file path")
+	flags.String(ConfigOpaQuery, "allow=data.authz.data", "OPA query string")
+	flags.String(ConfigOpaDecisionKey, "allow", "OPA decision key")
 
 	return flags
 }
