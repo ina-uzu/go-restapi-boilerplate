@@ -10,6 +10,7 @@ require (
 	github.com/go-chi/chi v4.0.3+incompatible
 	github.com/go-chi/render v1.0.1
 	github.com/mattn/go-sqlite3 v1.11.0
+	github.com/open-policy-agent/opa v0.16.2
 	github.com/prometheus/client_golang v0.9.3
 	github.com/rs/zerolog v1.17.2
 	github.com/spf13/pflag v1.0.5
